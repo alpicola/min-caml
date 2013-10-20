@@ -48,10 +48,11 @@ let fletd (x, e1, e2) = Let ((x, Type.Float), e1, e2)
 (* seq : exp * t -> t *)
 let seq (e1, e2) = Let ((Id.gentmp Type.Unit, Type.Unit), e1, e2)
 
-let regs = [| "%r2"; "%r5"; "%r6"; "%r7"; "%r8"; "%r9"; "%r10"; 
-  "%r11"; "%r12"; "%r13"; "%r14"; "%r15"; "%r16"; "%r17"; "%r18"; 
-  "%r19"; "%r20"; "%r21"; "%r22"; "%r23"; "%r24"; "%r25"; "%r26"; 
-  "%r27"; "%r28"; "%r29"; "%r30" |]
+let regs =
+  [| "%r2"; "%r3"; "%r4"; "%r5"; "%r6"; "%r7"; "%r8"; "%r9"; "%r10"; 
+     "%r11"; "%r12"; "%r13"; "%r14"; "%r15"; "%r16"; "%r17"; "%r18"; 
+     "%r19"; "%r20"; "%r21"; "%r22"; "%r23"; "%r24"; "%r25"; "%r26"; 
+     "%r27"; "%r28" |]
 (* let regs = Array.init 27 (fun i -> Printf.sprintf "_R_%d" i) *)
 let fregs = Array.init 32 (fun i -> Printf.sprintf "%%f%d" i)
 let allregs = Array.to_list regs
@@ -59,9 +60,10 @@ let allfregs = Array.to_list fregs
 let reg_cl = regs.(Array.length regs - 1) (* closure address *)
 let reg_sw = regs.(Array.length regs - 2) (* temporary for swap *)
 let reg_fsw = fregs.(Array.length fregs - 1) (* temporary for swap *)
-let reg_hp = "%r4"
-let reg_sp = "r3"
-let reg_tmp = "r31"
+let reg_hp = "%r28"
+let reg_sp = "r29"
+let reg_ra = "r31"
+let reg_tmp = "r1"
 
 (* is_reg : Id.t -> bool *)
 let is_reg x = x.[0] = '%'
