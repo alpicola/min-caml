@@ -3,6 +3,8 @@ open Asm
 external gethi : float -> int32 = "gethi"
 external getlo : float -> int32 = "getlo"
 
+let float_table = ref []
+
 let stackset = ref S.empty (* すでに Save された変数の集合 *)
 let stackmap = ref [] (* Save された変数のスタックにおける位置 *)
 let save x = 
@@ -58,11 +60,8 @@ and g' oc = function (* 各命令のアセンブリ生成 *)
       Printf.fprintf oc "\tlli\t%s, %d\n" (reg x) i
   | (NonTail(x), Li(i)) ->
       Printf.fprintf oc "\tli\t%s, %d\n" (reg x) i
-  (* TODO: fli
-  | (NonTail(x), FLi(Id.L(l))) ->
-      let s = load_label reg_tmp l in
-      Printf.fprintf oc "%s\tlfd\t%s, 0(%s)\n" s (reg x) reg_tmp
-  *)
+  | (NonTail(x), FLi(l)) ->
+      Printf.fprintf oc "\tfli\t%s, %f\n" (reg x) (List.assoc l !float_table)
   | (NonTail(x), SetL(Id.L(y))) -> 
       let s = load_label x y in
       Printf.fprintf oc "%s" s
@@ -126,7 +125,7 @@ and g' oc = function (* 各命令のアセンブリ生成 *)
       Printf.fprintf oc "\tsw\t%s, %d(%s)\n" (reg x) (offset y) reg_sp
   | (NonTail(_), Save(x, y)) 
       when List.mem x allfregs && not (S.mem y !stackset) ->
-      savef y;
+      save y;
       Printf.fprintf oc "\tswf\t%s, %d(%s)\n" (reg x) (offset y) reg_sp
   | (NonTail(_), Save(x, y)) -> assert (S.mem y !stackset); ()
   (* 復帰の仮想命令の実装 *)
@@ -147,12 +146,14 @@ and g' oc = function (* 各命令のアセンブリ生成 *)
             Lfd _ as exp)) ->
       g' oc (NonTail(fregs.(0)), exp);
       Printf.fprintf oc "\tjr\tr31\n";
-  | (Tail, (Restore(x) as exp)) ->
+  | (Tail, (Restore(x) as exp)) -> assert false;
+  (* TODO: reasoning return value type
       (match locate x with
          | [i] -> g' oc (NonTail(regs.(0)), exp)
          | [i; j] when (i + 1 = j) -> g' oc (NonTail(fregs.(0)), exp)
          | _ -> assert false);
       Printf.fprintf oc "\tjr\tr31\n";
+  *)
   | (Tail, IfEq(x, V(y), e1, e2)) ->
       g'_tail_if oc x y e1 e2 "beq" "bne"
   | (Tail, IfEq(x, C(_), e1, e2)) ->
@@ -194,7 +195,7 @@ and g' oc = function (* 各命令のアセンブリ生成 *)
   *)
   | (Tail, CallDir(Id.L(x), ys, zs)) -> (* 末尾呼び出し *)
       g'_args oc [] ys zs;
-      Printf.fprintf oc "\tjal\t%s\n" x
+      Printf.fprintf oc "\tj\t%s\n" x
   (* TODO: Closure call
   | (NonTail(a), CallCls(x, ys, zs)) ->
       Printf.fprintf oc "\tmflr\t%s\n" reg_tmp;
@@ -276,6 +277,7 @@ let h oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
   g oc (Tail, e)
 
 let f oc (Prog(data, fundefs, e)) =
+  float_table := data;
   Format.eprintf "generating assembly...@.";
   Printf.fprintf oc "\tj\t_min_caml_start\n";
   List.iter (fun fundef -> h oc fundef) fundefs;

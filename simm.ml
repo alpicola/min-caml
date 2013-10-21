@@ -17,9 +17,7 @@ and g' env = function (* 各命令の 16 bit 即値最適化 *)
   | Stw(x, y, V(z)) when M.mem z env -> Stw(x, y, C(M.find z env))
   | Lfd(x, V(y)) when M.mem y env -> Lfd(x, C(M.find y env))
   | Stfd(x, y, V(z)) when M.mem z env -> Stfd(x, y, C(M.find z env))
-  (* 分岐命令は0のときのみ *)
-  | IfEq(x, V(y), e1, e2) when M.mem y env && M.find y env = 0 -> 
-      IfEq(x, C(0), g env e1, g env e2)
+  (* 分岐命令は大小比較かつ0のときのみ *)
   | IfLE(x, V(y), e1, e2) when M.mem y env && M.find y env = 0 ->
       IfLE(x, C(0), g env e1, g env e2)
   | IfGE(x, V(y), e1, e2) when M.mem y env && M.find y env = 0 -> 
