@@ -7,8 +7,8 @@ let rec effect = function (* 副作用の有無 (caml2html: elim_effect) *)
   | _ -> false
 
 let rec tr = function (* 参照透過性 *)
-  | IfEq(_, _, _, _) | IfLE(_, _, _, _)
-  | Let(_, _, _) | LetRec(_, _) | LetTuple(_, _, _)
+  | Let(_, e1, e2) | IfEq(_, _, e1, e2) | IfLE(_, _, e1, e2) -> tr e1 && tr e2
+  | LetRec(_, e) | LetTuple(_, _, e) -> tr e
   | App _ | Get _ | Put _ | ExtFunApp _ -> false
   | _ -> true
 
