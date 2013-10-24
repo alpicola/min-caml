@@ -31,10 +31,6 @@ let reg r =
   then String.sub r 1 (String.length r - 1)
   else r 
 
-let load_label r label =
-  "\tlis\t" ^ (reg r) ^ ", ha16(" ^ label ^ ")\n" ^
-  "\taddi\t" ^ (reg r) ^ ", " ^ (reg r) ^ ", lo16(" ^ label ^ ")\n"
-
 (* 関数呼び出しのために引数を並べ替える (register shuffling) *)
 let rec shuffle sw xys = 
   (* remove identical moves *)
@@ -57,14 +53,16 @@ and g' oc = function (* 各命令のアセンブリ生成 *)
     (* 末尾でなかったら計算結果を dest にセット *)
   | (NonTail(_), Nop) -> ()
   | (NonTail(x), Li(i)) when i >= -32768 && i < 32768 -> 
-      Printf.fprintf oc "\tlli\t%s, %d\n" (reg x) i
-  | (NonTail(x), Li(i)) ->
       Printf.fprintf oc "\tli\t%s, %d\n" (reg x) i
+  | (NonTail(x), Li(i)) ->
+      let n = i lsr 16 in
+      let m = i lxor (n lsl 16) in
+      Printf.fprintf oc "\tlui\t%s, %d\n" (reg x) n;
+      Printf.fprintf oc "\tori\t%s, %s, %d\n" (reg x) (reg x) m
   | (NonTail(x), FLi(l)) ->
       Printf.fprintf oc "\tfli\t%s, %f\n" (reg x) (List.assoc l !float_table)
-  | (NonTail(x), SetL(Id.L(y))) -> 
-      let s = load_label x y in
-      Printf.fprintf oc "%s" s
+  | (NonTail(x), SetL(Id.L(l))) -> 
+      Printf.fprintf oc "\tll\t%s, %s\n" (reg x) l
   | (NonTail(x), Mr(y)) when x = y -> ()
   | (NonTail(x), Mr(y)) -> Printf.fprintf oc "\tmove\t%s, %s\n" (reg x) (reg y)
   | (NonTail(x), Neg(y)) -> Printf.fprintf oc "\tneg\t%s, %s\n" (reg x) (reg y)
@@ -187,33 +185,26 @@ and g' oc = function (* 各命令のアセンブリ生成 *)
   | (NonTail(z), IfFLE(x, y, e1, e2)) ->
       g'_non_tail_if oc (NonTail(z)) x y e1 e2 "fble" "fbgt"
   (* 関数呼び出しの仮想命令の実装 *)
-  (* TODO: Closure call
   | (Tail, CallCls(x, ys, zs)) -> (* 末尾呼び出し *)
       g'_args oc [(x, reg_cl)] ys zs;
-      Printf.fprintf oc "\tlwz\t%s, 0(%s)\n" (reg reg_sw) (reg reg_cl);
-      Printf.fprintf oc "\tmtctr\t%s\n\tbctr\n" (reg reg_sw);
-  *)
+      Printf.fprintf oc "\tlw\t%s, 0(%s)\n" reg_tmp (reg reg_cl);
+      Printf.fprintf oc "\tjr\t%s\n" reg_tmp
   | (Tail, CallDir(Id.L(x), ys, zs)) -> (* 末尾呼び出し *)
       g'_args oc [] ys zs;
       Printf.fprintf oc "\tj\t%s\n" x
-  (* TODO: Closure call
   | (NonTail(a), CallCls(x, ys, zs)) ->
-      Printf.fprintf oc "\tmflr\t%s\n" reg_tmp;
       g'_args oc [(x, reg_cl)] ys zs;
       let ss = stacksize () in
-        Printf.fprintf oc "\tstw\t%s, %d(%s)\n" reg_tmp (ss - 4) reg_sp;
+        Printf.fprintf oc "\tsw\t%s, %d(%s)\n" reg_ra (4 - ss) reg_sp;
+        Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_sp reg_sp (-ss);
+        Printf.fprintf oc "\tlw\t%s, 0(%s)\n" reg_tmp (reg reg_cl);
+        Printf.fprintf oc "\tjalr\t%s\n" reg_tmp;
         Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_sp reg_sp ss;
-        Printf.fprintf oc "\tlwz\t%s, 0(%s)\n" reg_tmp (reg reg_cl);
-        Printf.fprintf oc "\tmtctr\t%s\n" reg_tmp;
-        Printf.fprintf oc "\tbctrl\n";
-        Printf.fprintf oc "\tsubi\t%s, %s, %d\n" reg_sp reg_sp ss;
-        Printf.fprintf oc "\tlwz\t%s, %d(%s)\n" reg_tmp (ss - 4) reg_sp;
-        (if List.mem a allregs && a <> regs.(0) then 
-           Printf.fprintf oc "\tmr\t%s, %s\n" (reg a) (reg regs.(0)) 
-         else if List.mem a allfregs && a <> fregs.(0) then 
-           Printf.fprintf oc "\tfmr\t%s, %s\n" (reg a) (reg fregs.(0)));
-        Printf.fprintf oc "\tmtlr\t%s\n" reg_tmp
-  *)
+        Printf.fprintf oc "\tlw\t%s, %d(%s)\n" reg_ra (4 - ss) reg_sp;
+        (if List.mem a allregs && a <> regs.(0) then
+           Printf.fprintf oc "\tmove\t%s, %s\n" (reg a) (reg regs.(0))
+         else if List.mem a allfregs && a <> fregs.(0) then
+           Printf.fprintf oc "\tfmove\t%s, %s\n" (reg a) (reg fregs.(0)));
   | (NonTail(a), CallDir(Id.L(x), ys, zs)) -> 
       g'_args oc [] ys zs;
       let ss = stacksize () in
