@@ -60,8 +60,8 @@ let allfregs = Array.to_list fregs
 let reg_cl = regs.(Array.length regs - 1) (* closure address *)
 let reg_sw = regs.(Array.length regs - 2) (* temporary for swap *)
 let reg_fsw = fregs.(Array.length fregs - 1) (* temporary for swap *)
-let reg_hp = "%r28"
 let reg_sp = "r29"
+let reg_hp = "%r30"
 let reg_ra = "r31"
 let reg_tmp = "r1"
 

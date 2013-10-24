@@ -1,3 +1,25 @@
+min_caml_create_array:
+	move	r4, r2
+	move	r2, r30
+	bgtz	r4, create_array.loop
+	jr	r31
+create_array.loop:
+	sw	r3, 0(r30)
+	addi	r30, r30, 4
+	addi	r4, r4, -1
+	bgtz	r4, create_array.loop
+	jr	r31
+min_caml_create_float_array:
+	move	r4, r2
+	move	r2, r30
+	bgtz	r4, create_float_array.loop
+	jr	r31
+create_float_array.loop:
+	swf	f1, 0(r30)
+	addi	r30, r30, 4
+	addi	r4, r4, -1
+	bgtz	r4, create_float_array.loop
+	jr	r31
 min_caml_float_of_int:
 	lui	r3, 0x80   # 8388608 = 2 ^ 23
 	lui	r4, 0x4b00

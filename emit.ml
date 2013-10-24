@@ -79,16 +79,12 @@ and g' oc = function (* 各命令のアセンブリ生成 *)
       Printf.fprintf oc "\tsllv\t%s, %s, %s\n" (reg x) (reg y) (reg z)
   | (NonTail(x), Slw(y, C(z))) -> 
       Printf.fprintf oc "\tsll\t%s, %s, %d\n" (reg x) (reg y) z
-  (* TODO: lwzx
   | (NonTail(x), Lwz(y, V(z))) ->
-      Printf.fprintf oc "\tlwzx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  *)
+      Printf.fprintf oc "\tlwx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
   | (NonTail(x), Lwz(y, C(z))) -> 
       Printf.fprintf oc "\tlw\t%s, %d(%s)\n" (reg x) z (reg y)
-  (* TODO: stwx
   | (NonTail(_), Stw(x, y, V(z))) ->
-      Printf.fprintf oc "\tstwx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  *)
+      Printf.fprintf oc "\tstx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
   | (NonTail(_), Stw(x, y, C(z))) -> 
       Printf.fprintf oc "\tsw\t%s, %d(%s)\n" (reg x) z (reg y)
   | (NonTail(x), FMr(y)) when x = y -> ()
@@ -103,16 +99,12 @@ and g' oc = function (* 各命令のアセンブリ生成 *)
       Printf.fprintf oc "\tfmul\t%s, %s, %s\n" (reg x) (reg y) (reg z)
   | (NonTail(x), FDiv(y, z)) -> 
       Printf.fprintf oc "\tfdiv\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  (* TODO: lfdx
   | (NonTail(x), Lfd(y, V(z))) ->
-      Printf.fprintf oc "\tlfdx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  *)
+      Printf.fprintf oc "\tlwfx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
   | (NonTail(x), Lfd(y, C(z))) -> 
       Printf.fprintf oc "\tlwf\t%s, %d(%s)\n" (reg x) z (reg y)
-  (* TODO: stfdx
   | (NonTail(_), Stfd(x, y, V(z))) ->
-      Printf.fprintf oc "\tstfdx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
-  *)
+      Printf.fprintf oc "\tswfx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
   | (NonTail(_), Stfd(x, y, C(z))) ->
       Printf.fprintf oc "\tswf\t%s, %d(%s)\n" (reg x) z (reg y)
   | (NonTail(_), Comment(s)) -> Printf.fprintf oc "#\t%s\n" s
@@ -275,7 +267,7 @@ let f oc (Prog(data, fundefs, e)) =
   Printf.fprintf oc "_min_caml_start: # main entry point\n";
   Printf.fprintf oc "\taddi\tr29, r0, 1\n";
   Printf.fprintf oc "\tsll\tr29, r29, 20\n";
-  (* TODO: set heap pointer *)
+  Printf.fprintf oc "\taddi\tr30, r29, 4\n";
   Printf.fprintf oc "   # main program start\n";
   stackset := S.empty;
   stackmap := [];
