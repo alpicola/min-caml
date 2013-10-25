@@ -84,7 +84,7 @@ and g' oc = function (* 各命令のアセンブリ生成 *)
   | (NonTail(x), Lwz(y, C(z))) -> 
       Printf.fprintf oc "\tlw\t%s, %d(%s)\n" (reg x) z (reg y)
   | (NonTail(_), Stw(x, y, V(z))) ->
-      Printf.fprintf oc "\tstx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
+      Printf.fprintf oc "\tswx\t%s, %s, %s\n" (reg x) (reg y) (reg z)
   | (NonTail(_), Stw(x, y, C(z))) -> 
       Printf.fprintf oc "\tsw\t%s, %d(%s)\n" (reg x) z (reg y)
   | (NonTail(x), FMr(y)) when x = y -> ()
