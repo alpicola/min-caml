@@ -42,6 +42,8 @@ let rec g env = function (* 式の仮想マシンコード生成 *)
   | Closure.Neg (x) -> Ans (Neg (x))
   | Closure.Add (x, y) -> Ans (Add (x, V (y)))
   | Closure.Sub (x, y) -> Ans (Sub (x, V (y)))
+  | Closure.Mul (x, y) -> Ans (Mul (x, y))
+  | Closure.Div (x, y) -> Ans (Div (x, y))
   | Closure.FNeg (x) -> Ans (FNeg (x))
   | Closure.FAdd (x, y) -> Ans (FAdd (x, y))
   | Closure.FSub (x, y) -> Ans (FSub (x, y))
@@ -132,6 +134,20 @@ let rec g env = function (* 式の仮想マシンコード生成 *)
                     Ans (Stw (z, x, V (offset)))) 
            | _ -> assert false)
   | Closure.ExtArray (Id.L(x)) -> Ans(SetL(Id.L("min_caml_" ^ x)))
+  | Closure.ExtFunApp (Id.L(x), ys) ->
+      (match (x, ys) with
+         | ("fabs", [y]) -> Ans (FAbs (y))
+         | ("fneg", [y]) -> Ans (FNeg (y))
+         | ("fsqr", [y]) -> Ans (FSqr (y))
+         | ("sqrt", [y]) -> Ans (FSqrt (y))
+         | ("fless", [y; z]) -> Ans (FLess (y, z))
+         | ("fispos", [y]) -> Ans (FIsPos (y))
+         | ("fisneg", [y]) -> Ans (FIsNeg (y))
+         | ("fiszero", [y]) -> Ans (FIsZero (y))
+         | ("abs_float", [y]) -> Ans (FAbs (y))
+         | _ ->
+             let (int, float) = separate (List.map (fun y -> (y, M.find y env)) ys) in
+             Ans (CallDir (Id.L("min_caml_" ^ x), int, float)))
 
 (* 関数の仮想マシンコード生成 *)
 let h { Closure.name = (Id.L(x), t); Closure.args = yts; 

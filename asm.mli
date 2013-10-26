@@ -11,11 +11,20 @@ and exp =
   | Neg of Id.t
   | Add of Id.t * id_or_imm
   | Sub of Id.t * id_or_imm
+  | Mul of Id.t * Id.t
+  | Div of Id.t * Id.t
   | Slw of Id.t * id_or_imm
   | Lwz of Id.t * id_or_imm
   | Stw of Id.t * Id.t * id_or_imm
   | FMr of Id.t 
+  | FAbs of Id.t
   | FNeg of Id.t
+  | FSqr of Id.t
+  | FSqrt of Id.t
+  | FLess of Id.t * Id.t
+  | FIsPos of Id.t
+  | FIsNeg of Id.t
+  | FIsZero of Id.t
   | FAdd of Id.t * Id.t
   | FSub of Id.t * Id.t
   | FMul of Id.t * Id.t

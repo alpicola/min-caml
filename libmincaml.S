@@ -149,12 +149,145 @@ truncate.neg:
 	fneg	f1, f1
 	sw	r31, 0(r29)
 	j	min_caml_int_of_float
-min_caml_print_byte:
-	ob	r2
+min_caml_fhalf:
+	fli	f2, 0.5
+	fmul	f1, f1, f2
 	jr	r31
-min_caml_print_int:
-	ow	r2
+min_caml_fsqr:
+	fmul	f1, f1, f1
+	jr	r31
+min_caml_sqrt:
+	fsqrt	f1, f1
+	jr	r31
+min_caml_fabs:
+	fabs	f1, f1
+	jr	r31
+min_caml_fneg:
+	fneg	f1, f1
 	jr	r31
 min_caml_read_int:
 	iw	r2
+	jr	r31
+min_caml_read_float:
+	iwf	f1
+	jr	r31
+min_caml_print_byte:
+min_caml_print_char:
+	ob	r2
+	jr	r31
+min_caml_print_int:
+	li	r3, 10
+	li	r4, 100
+	li	r5, 1000
+	bltz	r2, print_int.neg
+print_int.pos:
+	blt	r2, r5, print_int.pos.1000
+print_int.pos.large:
+	mul	r5, r5
+	mflo	r8 # 1000000
+	bge	r2, r8, print_int.pos.large.large
+	div	r2, r5
+	mfhi	r2
+	mflo	r9
+	move	r27, r31
+	jal	print_int.pos.1000
+	move	r2, r9
+	move	r31, r27
+	j	print_int.pos.1000.1
+print_int.pos.large.large:
+	div	r2, r8
+	mfhi	r2
+	mflo	r9
+	move	r27, r31
+	jal	print_int.pos.10000
+	move	r2, r9
+	move	r31, r27
+	j	print_int.pos.1000000.1
+print_int.neg:
+	li	r8, 45
+	ob	r8
+	neg	r2, r2
+	j	print_int.pos
+print_int.pos.1000000:
+	div	r2, r7
+	mfhi	r8
+	blez	r8, print_int.pos.100000
+	addi	r8, r8, 48
+	ob	r8
+	mflo	r2
+	j	print_int.pos.100000.1
+print_int.pos.100000:
+	div	r2, r6
+	mfhi	r8
+	blez	r8, print_int.pos.10000
+	addi	r8, r8, 48
+	ob	r8
+	mflo	r2
+	j	print_int.pos.10000.1
+print_int.pos.10000:
+	div	r2, r5
+	mfhi	r8
+	blez	r8, print_int.pos.1000
+	addi	r8, r8, 48
+	ob	r8
+	mflo	r2
+	j	print_int.pos.1000.1
+print_int.pos.1000:
+	div	r2, r4
+	mfhi	r8
+	blez	r8, print_int.pos.100
+	addi	r8, r8, 48
+	ob	r8
+	mflo	r2
+	j	print_int.pos.100.1
+print_int.pos.100:
+	div	r2, r3
+	mfhi	r8
+	blez	r8, print_int.pos.10
+	addi	r8, r8, 48
+	ob	r8
+	mflo	r2
+print_int.pos.10:
+	addi	r2, r2, 48
+	ob	r2
+	jr	r31
+print_int.pos.1000000.1:
+	li	r6, 10000
+	mul	r6, r3
+	mflo	r7 # 100000
+	div	r2, r7
+	mfhi	r8
+	addi	r8, r8, 48
+	ob	r8
+	mflo	r2
+print_int.pos.100000.1:
+	div	r2, r6
+	mfhi	r8
+	addi	r8, r8, 48
+	ob	r8
+	mflo	r2
+print_int.pos.10000.1:
+	div	r2, r5
+	mfhi	r8
+	addi	r8, r8, 48
+	ob	r8
+	mflo	r2
+print_int.pos.1000.1:
+	div	r2, r4
+	mfhi	r8
+	addi	r8, r8, 48
+	ob	r8
+	mflo	r2
+print_int.pos.100.1:
+	div	r2, r3
+	mfhi	r8
+	addi	r8, r8, 48
+	ob	r8
+	mflo	r2
+	addi	r2, r2, 48
+	ob	r2
+	jr	r31
+min_caml_print_newline:
+	li	r2, 10
+	ob	r2
 	jr	r31

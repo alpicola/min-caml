@@ -13,11 +13,20 @@ and exp = (* 一つ一つの命令に対応する式 *)
   | Neg of Id.t
   | Add of Id.t * id_or_imm
   | Sub of Id.t * id_or_imm
+  | Mul of Id.t * Id.t
+  | Div of Id.t * Id.t
   | Slw of Id.t * id_or_imm
   | Lwz of Id.t * id_or_imm
   | Stw of Id.t * Id.t * id_or_imm
   | FMr of Id.t 
+  | FAbs of Id.t
   | FNeg of Id.t
+  | FSqr of Id.t
+  | FSqrt of Id.t
+  | FLess of Id.t * Id.t
+  | FIsPos of Id.t
+  | FIsNeg of Id.t
+  | FIsZero of Id.t
   | FAdd of Id.t * Id.t
   | FSub of Id.t * Id.t
   | FMul of Id.t * Id.t
@@ -80,10 +89,12 @@ let fv_id_or_imm = function V (x) -> [x] | _ -> []
 (* fv_exp : Id.t list -> t -> S.t list *)
 let rec fv_exp = function
   | Nop | Li (_) | FLi (_) | SetL (_) | Comment (_) | Restore (_) -> []
-  | Mr (x) | Neg (x) | FMr (x) | FNeg (x) | Save (x, _) -> [x]
+  | Mr (x) | Neg (x) | FMr (x) | FAbs(x) | FNeg (x) | FSqr(x) | FSqrt(x)
+  | FIsPos(x) | FIsNeg(x) | FIsZero(x) | Save (x, _) -> [x]
   | Add (x, y') | Sub (x, y') | Slw (x, y') | Lfd (x, y') | Lwz (x, y') -> 
       x :: fv_id_or_imm y'
-  | FAdd (x, y) | FSub (x, y) | FMul (x, y) | FDiv (x, y) ->
+  | Mul (x, y) | Div (x, y) | FAdd (x, y) | FSub (x, y)
+  | FMul (x, y) | FDiv (x, y) | FLess (x, y) ->
       [x; y]
   | Stw (x, y, z') | Stfd (x, y, z') -> x :: y :: fv_id_or_imm z'
   | IfEq (x, y', e1, e2) | IfLE (x, y', e1, e2) | IfGE (x, y', e1, e2) -> 
