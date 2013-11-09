@@ -23,8 +23,8 @@ let locate x =
     | y :: zs when x = y -> 0 :: List.map succ (loc zs)
     | y :: zs -> List.map succ (loc zs) in
     loc !stackmap
-let offset x = -4 * List.hd (locate x)
-let stacksize () = (List.length !stackmap + 1) * 4
+let offset x = -(List.hd (locate x))
+let stacksize () = (List.length !stackmap + 1)
 
 let reg r = 
   if is_reg r 
@@ -207,12 +207,12 @@ and g' oc = function (* 各命令のアセンブリ生成 *)
   | (NonTail(a), CallCls(x, ys, zs)) ->
       g'_args oc [(x, reg_cl)] ys zs;
       let ss = stacksize () in
-        Printf.fprintf oc "\tsw\t%s, %d(%s)\n" reg_ra (4 - ss) reg_sp;
+        Printf.fprintf oc "\tsw\t%s, %d(%s)\n" reg_ra (1 - ss) reg_sp;
         Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_sp reg_sp (-ss);
         Printf.fprintf oc "\tlw\t%s, 0(%s)\n" reg_tmp (reg reg_cl);
         Printf.fprintf oc "\tjalr\t%s\n" reg_tmp;
         Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_sp reg_sp ss;
-        Printf.fprintf oc "\tlw\t%s, %d(%s)\n" reg_ra (4 - ss) reg_sp;
+        Printf.fprintf oc "\tlw\t%s, %d(%s)\n" reg_ra (1 - ss) reg_sp;
         (if List.mem a allregs && a <> regs.(0) then
            Printf.fprintf oc "\tmove\t%s, %s\n" (reg a) (reg regs.(0))
          else if List.mem a allfregs && a <> fregs.(0) then
@@ -220,11 +220,11 @@ and g' oc = function (* 各命令のアセンブリ生成 *)
   | (NonTail(a), CallDir(Id.L(x), ys, zs)) -> 
       g'_args oc [] ys zs;
       let ss = stacksize () in
-        Printf.fprintf oc "\tsw\t%s, %d(%s)\n" reg_ra (4 - ss) reg_sp;
+        Printf.fprintf oc "\tsw\t%s, %d(%s)\n" reg_ra (1 - ss) reg_sp;
         Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_sp reg_sp (-ss);
         Printf.fprintf oc "\tjal\t%s\n" x;
         Printf.fprintf oc "\taddi\t%s, %s, %d\n" reg_sp reg_sp ss;
-        Printf.fprintf oc "\tlw\t%s, %d(%s)\n" reg_ra (4 - ss) reg_sp;
+        Printf.fprintf oc "\tlw\t%s, %d(%s)\n" reg_ra (1 - ss) reg_sp;
         (if List.mem a allregs && a <> regs.(0) then
            Printf.fprintf oc "\tmove\t%s, %s\n" (reg a) (reg regs.(0))
          else if List.mem a allfregs && a <> fregs.(0) then
@@ -286,8 +286,8 @@ let f oc (Prog(data, fundefs, e)) =
   List.iter (fun fundef -> h oc fundef) fundefs;
   Printf.fprintf oc "_min_caml_start: # main entry point\n";
   Printf.fprintf oc "\taddi\tr29, r0, 1\n";
-  Printf.fprintf oc "\tsll\tr29, r29, 20\n";
-  Printf.fprintf oc "\taddi\tr30, r29, 4\n";
+  Printf.fprintf oc "\tsll\tr29, r29, 18\n";
+  Printf.fprintf oc "\taddi\tr30, r29, 1\n";
   Printf.fprintf oc "   # main program start\n";
   stackset := S.empty;
   stackmap := [];

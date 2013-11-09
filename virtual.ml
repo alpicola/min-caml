@@ -23,8 +23,8 @@ let expand xts ini addf addi =
     xts
     ini
     (fun (offset, acc) x -> let offset = align offset in
-       (offset + 8, addf x offset acc))
-    (fun (offset, acc) x t -> (offset + 4, addi x t offset acc))
+       (offset + 1, addf x offset acc))
+    (fun (offset, acc) x t -> (offset + 1, addi x t offset acc))
 
 let rec g env = function (* 式の仮想マシンコード生成 *)
   | Closure.Unit -> Ans (Nop)
@@ -74,7 +74,7 @@ let rec g env = function (* 式の仮想マシンコード生成 *)
       let (offset, store_fv) = 
         expand
           (List.map (fun y -> (y, M.find y env)) ys)
-          (4, e2')
+          (1, e2')
           (fun y offset store_fv -> seq (Stfd (y, x, C (offset)), store_fv))
           (fun y _ offset store_fv -> seq (Stw (y, x, C (offset)), store_fv)) in
         Let ((x, t), Mr (reg_hp), 
@@ -112,27 +112,17 @@ let rec g env = function (* 式の仮想マシンコード生成 *)
              else Let ((x, t), Lwz (y, C (offset)), load)) in
         load
   | Closure.Get (x, y) -> (* 配列の読み出し *)
-      let offset = Id.genid "o" in  
-        (match M.find x env with
-           | Type.Array (Type.Unit) -> Ans (Nop)
-           | Type.Array (Type.Float) ->
-               Let ((offset, Type.Int), Slw (y, C (2)), 
-                    Ans (Lfd (x, V (offset))))
-           | Type.Array (_) ->
-               Let ((offset, Type.Int), Slw (y, C (2)),
-                    Ans (Lwz (x, V (offset))))
-           | _ -> assert false)
+      (match M.find x env with
+         | Type.Array (Type.Unit) -> Ans (Nop)
+         | Type.Array (Type.Float) -> Ans (Lfd (x, V (y)))
+         | Type.Array (_) -> Ans (Lwz (x, V (y)))
+         | _ -> assert false)
   | Closure.Put (x, y, z) ->
-      let offset = Id.genid "o" in 
-        (match M.find x env with
-           | Type.Array (Type.Unit) -> Ans (Nop)
-           | Type.Array (Type.Float) -> 
-               Let ((offset, Type.Int), Slw (y, C (2)),
-                    Ans (Stfd (z, x, V (offset)))) 
-           | Type.Array (_) ->
-               Let ((offset, Type.Int), Slw (y, C (2)), 
-                    Ans (Stw (z, x, V (offset)))) 
-           | _ -> assert false)
+      (match M.find x env with
+         | Type.Array (Type.Unit) -> Ans (Nop)
+         | Type.Array (Type.Float) -> Ans (Stfd (z, x, V (y))) 
+         | Type.Array (_) -> Ans (Stw (z, x, V (y)))
+         | _ -> assert false)
   | Closure.ExtArray (Id.L(x)) -> Ans(SetL(Id.L("min_caml_" ^ x)))
   | Closure.ExtFunApp (Id.L(x), ys) ->
       (match (x, ys) with
@@ -156,7 +146,7 @@ let h { Closure.name = (Id.L(x), t); Closure.args = yts;
   let (offset, load) = 
     expand
       zts
-      (4, g (M.add x t (M.add_list yts (M.add_list zts M.empty))) e)
+      (1, g (M.add x t (M.add_list yts (M.add_list zts M.empty))) e)
       (fun z offset load -> fletd (z, Lfd (reg_cl, C (offset)), load))
       (fun z t offset load -> Let ((z, t), Lwz (reg_cl, C (offset)), load)) in
     match t with

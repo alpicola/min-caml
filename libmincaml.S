@@ -5,7 +5,7 @@ min_caml_create_array:
 	jr	r31
 create_array.loop:
 	sw	r3, 0(r30)
-	addi	r30, r30, 4
+	addi	r30, r30, 1
 	addi	r4, r4, -1
 	bgtz	r4, create_array.loop
 	jr	r31
@@ -16,7 +16,7 @@ min_caml_create_float_array:
 	jr	r31
 create_float_array.loop:
 	swf	f1, 0(r30)
-	addi	r30, r30, 4
+	addi	r30, r30, 1
 	addi	r4, r4, -1
 	bgtz	r4, create_float_array.loop
 	jr	r31
@@ -309,22 +309,16 @@ floor.neg.small:
 	fmove	f1, f2
 	jr	r31
 min_caml_truncate: # for min-caml/test
+	move	r27, r31
 	fblt	f1, f0, truncate.neg
-	sw	r31, 0(r29)
-	addi	r29, r29, -4
 	jal	min_caml_floor
-	addi	r29, r29, 4
-	lw	r31, 0(r29)
+	move	r31, r27
 	j	min_caml_int_of_float
 truncate.neg:
 	fneg	f1, f1
-	sw	r31, 0(r29)
-	addi	r29, r29, -4
 	jal	min_caml_floor
-	addi	r29, r29, 4
-	lw	r31, 0(r29)
 	fneg	f1, f1
-	sw	r31, 0(r29)
+	move	r31, r27
 	j	min_caml_int_of_float
 min_caml_fhalf:
 	fli	f2, 0.5
