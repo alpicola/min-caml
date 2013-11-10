@@ -1,3 +1,4 @@
+.text
 min_caml_create_array:
 	move	r4, r2
 	move	r2, r30

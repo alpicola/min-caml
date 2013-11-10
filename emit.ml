@@ -62,7 +62,7 @@ and g' oc = function (* 各命令のアセンブリ生成 *)
   | (NonTail(x), FLi(l)) ->
       Printf.fprintf oc "\tfli\t%s, %s\n" (reg x) (string_of_float (List.assoc l !float_table))
   | (NonTail(x), SetL(Id.L(l))) -> 
-      Printf.fprintf oc "\tll\t%s, %s\n" (reg x) l
+      Printf.fprintf oc "\tla\t%s, %s\n" (reg x) l
   | (NonTail(x), Mr(y)) when x = y -> ()
   | (NonTail(x), Mr(y)) -> Printf.fprintf oc "\tmove\t%s, %s\n" (reg x) (reg y)
   | (NonTail(x), Neg(y)) -> Printf.fprintf oc "\tneg\t%s, %s\n" (reg x) (reg y)
@@ -282,12 +282,10 @@ let h oc { name = Id.L(x); args = _; fargs = _; body = e; ret = _ } =
 let f oc (Prog(data, fundefs, e)) =
   float_table := data;
   Format.eprintf "generating assembly...@.";
+  Printf.fprintf oc ".text\n";
   Printf.fprintf oc "\tj\t_min_caml_start\n";
   List.iter (fun fundef -> h oc fundef) fundefs;
   Printf.fprintf oc "_min_caml_start: # main entry point\n";
-  Printf.fprintf oc "\taddi\tr29, r0, 1\n";
-  Printf.fprintf oc "\tsll\tr29, r29, 18\n";
-  Printf.fprintf oc "\taddi\tr30, r29, 1\n";
   Printf.fprintf oc "   # main program start\n";
   stackset := S.empty;
   stackmap := [];
