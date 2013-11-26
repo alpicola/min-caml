@@ -24,7 +24,6 @@ create_float_array.loop:
 min_caml_sin:
 	fclt	r2, f1, f0 # sign
 	fabs	f1, f1
-	# TODO: these should be assigned to global
 	fli	f2, 3.1415927 # pi
 	lui	r3, 0x4000
 	imvf	f6, r3        # 2.0
@@ -60,18 +59,24 @@ sin.cont.2:
 	j	cos.kernel
 sin.kernel:
 	fmul	f2, f1, f1 # x^2
-	fmul	f3, f2, f1 # x^3
-	fmul	f4, f3, f2 # x^5
-	fmul	f2, f4, f2 # x^7
-	fli	f5, 0.008332824
-	fmul	f4, f5, f4
-	fli	f5, 0.00019587841
-	fmul	f2, f5, f2
-	fsub	f2, f4, f2
-	fli	f4, 0.16666668
-	fmul	f3, f4, f3
-	fsub	f2, f2, f3
-	fadd	f1, f2, f1
+	lui	r3, 0xb94d
+	ori	r3, r3, 0x64b6
+	imvf	f3, r3 # -0.00019587841
+	fmul	f3, f2, f3
+	lui	r3, 0x3c08
+	ori	r3, r3, 0x8666
+	imvf	f4, r3 # 0.008332824
+	fadd	f3, f3, f4
+	fmul	f3, f2, f3
+	lui	r3, 0xbe2a
+	ori	r3, r3, 0xaaac
+	imvf	f4, r3 # 0.16666668
+	fadd	f3, f3, f4
+	fmul	f3, f2, f3
+	lui	r3, 0x3f80
+	imvf	f4, r3 # 1.0
+	fadd	f3, f3, f4
+	fmul	f1, f1, f3
 	blez	r2, sin.kernel.1
 	fneg	f1, f1
 sin.kernel.1:
@@ -79,7 +84,6 @@ sin.kernel.1:
 min_caml_cos:
 	move	r2, r0 # sign
 	fabs	f1, f1
-	# TODO: these should be assigned to global
 	fli	f2, 3.1415927 # pi
 	lui	r3, 0x4000
 	imvf	f6, r3        # 2.0
@@ -116,18 +120,20 @@ cos.cont.2:
 	j	sin.kernel
 cos.kernel:
 	fmul	f1, f1, f1 # x^2
-	fmul	f2, f1, f1 # x^4
-	fmul	f3, f2, f1 # x^6
-	fli	f4, 0.04166368
-	fmul	f2, f4, f2
-	fli	f4, 0.0013695068
-	fmul	f3, f4, f3
-	fsub	f2, f2, f3
-	fmul	f1, f7, f1
-	fsub	f1, f2, f1
+	lui	r3, 0xbab3
+	ori	r3, r3, 0x8106
+	imvf	f2, r3 # -0.0013695068
+	fmul	f2, f2, f1
+	lui	r3, 0x3d2a
+	ori	r3, r3, 0xa789
+	imvf	f3, r3 # 0.04166368 
+	fadd	f2, f2, f3
+	fmul	f2, f2, f1
+	fsub	f2, f2, f7
+	fmul	f2, f2, f1
 	lui	r3, 0x3f80
-	imvf	f2, r3 # 1.0
-	fadd	f1, f1, f2
+	imvf	f3, r3 # 1.0
+	fadd	f1, f2, f3
 	blez	r2, cos.kernel.1
 	fneg	f1, f1
 cos.kernel.1:
@@ -137,14 +143,14 @@ min_caml_atan:
 	fabs	f1, f1
 	lui	r3, 0x3ee0
 	imvf	f2, r3     # 0.4375
-	move	r27, r31
+	move	r10, r31
 atan:
 	fbge	f1, f2, atan.large
 	jal	atan.kernel
 	blez	r2, atan.1
 	fneg	f1, f1
 atan.1:
-	jr	r27
+	jr	r10
 atan.large:
 	lui	r3, 0x401c
 	imvf	f2, r3     # 2.4375
@@ -160,7 +166,7 @@ atan.large:
 	blez	r2, atan.1
 	fneg	f1, f1
 atan.large.1:
-	jr	r27
+	jr	r10
 atan.large.large:
 	fdiv	f1, f4, f1
 	jal	atan.kernel
@@ -169,33 +175,42 @@ atan.large.large:
 	blez	r2, atan.large.large.1
 	fneg	f1, f1
 atan.large.large.1:
-	jr	r27
+	jr	r10
 atan.kernel:
 	fmul	f2, f1, f1 # x^2
-	fmul	f3, f2, f1 # x^3
-	fmul	f4, f3, f2 # x^5
-	fmul	f5, f4, f2 # x^7
-	fmul	f6, f5, f2 # x^9
-	fmul	f7, f6, f2 # x^11
-	fmul	f2, f7, f2 # x^13
-	fli	f8, 0.060035485
-	fmul	f2, f8, f2
-	fli	f8, 0.08976446
-	fmul	f7, f8, f7
-	fsub	f2, f2, f7
-	fli	f7, 0.111111104
-	fmul	f6, f7, f6
-	fadd	f2, f2, f6
-	fli	f6, 0.142857142
-	fmul	f5, f6, f5
-	fsub	f2, f2, f5
-	fli	f5, 0.2
-	fmul	f4, f5, f4
-	fadd	f2, f2, f4
-	fli	f4, 0.3333333
-	fmul	f3, f4, f3
-	fsub	f2, f2, f3
-	fadd	f1, f2, f1
+	lui	r3, 0x3d75
+	ori	r3, r3, 0xe7c5
+	imvf	f3, r3 # 0.060035485
+	fmul	f3, f2, f3
+	lui	r3, 0xbdb7
+	ori	r3, r3, 0xd66e
+	imvf	f4, r3 # -0.08976446
+	fadd	f3, f3, f4
+	fmul	f3, f2, f3
+	lui	r3, 0x3de3
+	ori	r3, r3, 0x8e38
+	imvf	f4, r3 # 0.111111104
+	fadd	f3, f3, f4
+	fmul	f3, f2, f3
+	lui	r3, 0xbe12
+	ori	r3, r3, 0x4925
+	imvf	f4, r3 # -0.142857142
+	fadd	f3, f3, f4
+	fmul	f3, f2, f3
+	lui	r3, 0x3e4c
+	ori	r3, r3, 0xcccd
+	imvf	f4, r3 # 0.2
+	fadd	f3, f3, f4
+	fmul	f3, f2, f3
+	lui	r3, 0xbeaa
+	ori	r3, r3, 0xaaaa
+	imvf	f4, r3 # -0.3333333
+	fadd	f3, f3, f4
+	fmul	f3, f2, f3
+	lui	r3, 0x3f80
+	imvf	f4, r3 # 1.0
+	fadd	f3, f3, f4
+	fmul	f1, f1, f3
 	jr	r31
 min_caml_float_of_int:
 	lui	r3, 0x80   # 8388608 = 2 ^ 23
@@ -310,16 +325,16 @@ floor.neg.small:
 	fmove	f1, f2
 	jr	r31
 min_caml_truncate: # for min-caml/test
-	move	r27, r31
+	move	r10, r31
 	fblt	f1, f0, truncate.neg
 	jal	min_caml_floor
-	move	r31, r27
+	move	r31, r10
 	j	min_caml_int_of_float
 truncate.neg:
 	fneg	f1, f1
 	jal	min_caml_floor
 	fneg	f1, f1
-	move	r31, r27
+	move	r31, r10
 	j	min_caml_int_of_float
 min_caml_fhalf:
 	fli	f2, 0.5
@@ -361,19 +376,19 @@ print_int.pos.large:
 	div	r2, r5
 	mfhi	r2
 	mflo	r9
-	move	r27, r31
+	move	r10, r31
 	jal	print_int.pos.1000
 	move	r2, r9
-	move	r31, r27
+	move	r31, r10
 	j	print_int.pos.1000.1
 print_int.pos.large.large:
 	div	r2, r8
 	mfhi	r2
 	mflo	r9
-	move	r27, r31
+	move	r10, r31
 	jal	print_int.pos.10000
 	move	r2, r9
-	move	r31, r27
+	move	r31, r10
 	j	print_int.pos.1000000.1
 print_int.neg:
 	li	r8, 45
