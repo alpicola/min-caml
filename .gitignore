@@ -1,0 +1,10 @@
+._d
+._bcdi
+*.cma
+*.cmo
+*.cmi
+*.a
+*.o
+*.ans
+*.cmp
+*.res
