@@ -14,6 +14,7 @@ and exp =
   | Mul of Id.t * Id.t
   | Div of Id.t * Id.t
   | Slw of Id.t * id_or_imm
+  | Sraw of Id.t * id_or_imm
   | Lwz of Id.t * id_or_imm
   | Stw of Id.t * Id.t * id_or_imm
   | FMr of Id.t 

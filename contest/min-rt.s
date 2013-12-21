@@ -4572,9 +4572,7 @@ trace_reflections.2927:
 beq_else.7729:
 	la	r2, min_caml_intersected_object_id
 	lw	r2, 0(r2)
-	li	r3, 4
-	mul	r2, r3
-	mflo	r2
+	sll	r2, r2, 2
 	la	r3, min_caml_intsec_rectside
 	lw	r3, 0(r3)
 	add	r2, r2, r3
@@ -4777,10 +4775,8 @@ beq_else.7737:
 	jal	utexture.2920
 	addi	r29, r29, 11
 	lw	r31, -10(r29)
-	li	r2, 4
-	lw	r3, -6(r29)
-	mul	r3, r2
-	mflo	r2
+	lw	r2, -6(r29)
+	sll	r2, r2, 2
 	la	r3, min_caml_intsec_rectside
 	lw	r3, 0(r3)
 	add	r2, r2, r3
@@ -6804,9 +6800,7 @@ add_reflection.3063:
 	swx	r3, r2, r4
 	jr	r31
 setup_rect_reflection.3070:
-	li	r4, 4
-	mul	r2, r4
-	mflo	r2
+	sll	r2, r2, 2
 	la	r4, min_caml_n_reflections
 	lw	r4, 0(r4)
 	fli	f1, 1.
@@ -6884,9 +6878,7 @@ setup_rect_reflection.3070:
 	sw	r3, 0(r2)
 	jr	r31
 setup_surface_reflection.3073:
-	li	r4, 4
-	mul	r2, r4
-	mflo	r2
+	sll	r2, r2, 2
 	addi	r2, r2, 1
 	la	r4, min_caml_n_reflections
 	lw	r4, 0(r4)
@@ -7038,14 +7030,10 @@ rt.3078:
 	la	r4, min_caml_image_size
 	sw	r3, 1(r4)
 	la	r4, min_caml_image_center
-	li	r5, 2
-	div	r2, r5
-	mfhi	r5
+	sra	r5, r2, 1
 	sw	r5, 0(r4)
 	la	r4, min_caml_image_center
-	li	r5, 2
-	div	r3, r5
-	mfhi	r3
+	sra	r3, r3, 1
 	sw	r3, 1(r4)
 	la	r3, min_caml_scan_pitch
 	fli	f1, 128.

@@ -1,5 +1,7 @@
 open Asm
 
+let pow2 n = n >= 0 && n land (n - 1) = 0
+
 let rec g env = function (* 命令列の 16 bit 即値最適化 *)
   | Ans(exp) -> Ans(g' env exp)
   | Let((x, t), Li(i), e) when (-32768 <= i) && (i < 32768) ->
@@ -8,7 +10,8 @@ let rec g env = function (* 命令列の 16 bit 即値最適化 *)
   | Let(xt, Slw(y, C(i)), e) when M.mem y env -> (* for array access *)
       g env (Let(xt, Li((M.find y env) lsl i), e))
   | Let(xt, exp, e) -> Let(xt, g' env exp, g env e)
-and g' env = function (* 各命令の 16 bit 即値最適化 *)
+and g' env = function
+  (* 16 bit 即値最適化 *)
   | Add(x, V(y)) when M.mem y env -> Add(x, C(M.find y env))
   | Add(x, V(y)) when M.mem x env -> Add(y, C(M.find x env))
   | Sub(x, V(y)) when M.mem y env -> Sub(x, C(M.find y env))
@@ -17,6 +20,15 @@ and g' env = function (* 各命令の 16 bit 即値最適化 *)
   | Stw(x, y, V(z)) when M.mem z env -> Stw(x, y, C(M.find z env))
   | Lfd(x, V(y)) when M.mem y env -> Lfd(x, C(M.find y env))
   | Stfd(x, y, V(z)) when M.mem z env -> Stfd(x, y, C(M.find z env))
+  (* 2のべき *)
+  | Mul(x, y) when M.mem x env && pow2 (M.find x env) ->
+      Slw(y, C(int_of_float (log (float_of_int (M.find x env)) /. log 2.)))
+  | Mul(x, y) when M.mem y env && pow2 (M.find y env) ->
+      Slw(x, C(int_of_float (log (float_of_int (M.find y env)) /. log 2.)))
+  | Div(x, y) when M.mem y env && pow2 (M.find y env) ->
+      Sraw(x, C(int_of_float (log (float_of_int (M.find y env)) /. log 2.)))
+  | Div(x, y) ->
+      CallDir (Id.L("min_caml_div"), [x; y], []) 
   (* 分岐命令は大小比較かつ0のときのみ *)
   | IfLE(x, V(y), e1, e2) when M.mem y env && M.find y env = 0 ->
       IfLE(x, C(0), g env e1, g env e2)

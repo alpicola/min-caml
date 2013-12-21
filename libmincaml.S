@@ -70,7 +70,7 @@ sin.kernel:
 	fmul	f3, f2, f3
 	lui	r3, 0xbe2a
 	ori	r3, r3, 0xaaac
-	imvf	f4, r3 # 0.16666668
+	imvf	f4, r3 # -0.16666668
 	fadd	f3, f3, f4
 	fmul	f3, f2, f3
 	lui	r3, 0x3f80
@@ -352,6 +352,39 @@ min_caml_fabs:
 min_caml_fneg:
 	fneg	f1, f1
 	jr	r31
+min_caml_div: # naive implemetion
+	move	r4, r2
+	move	r2, r0
+	beq	r0, r3, div.end
+	bgez	r4, div.pos
+div.neg:
+	neg	r4, r4
+	bgtz	r3, div.loop.neg
+	neg	r3, r3
+	j	div.loop.pos
+div.pos:
+	bgtz	r3, div.loop.pos
+	neg	r3, r3
+	j	div.loop.neg
+div.loop.pos:
+	sub	r4, r4, r3
+	bgez	r4, div.loop.pos.0
+	jr	r31
+div.loop.pos.0:
+	sub	r4, r4, r3
+	addi	r2, r2, 1
+	bgez	r4, div.loop.pos.0
+	jr	r31
+div.loop.neg:
+	sub	r4, r4, r3
+	bgez	r4, div.loop.neg.0
+	jr	r31
+div.loop.neg.0:
+	sub	r4, r4, r3
+	addi	r2, r2, -1
+	bgez	r4, div.loop.neg.0
+div.end:
+	jr	r31
 min_caml_read_int:
 	iw	r2
 	jr	r31
@@ -363,100 +396,114 @@ min_caml_print_char:
 	ob	r2
 	jr	r31
 min_caml_print_int:
-	li	r3, 10
-	li	r4, 100
-	li	r5, 1000
+	li	r4, 10
+	li	r5, 100
+	li	r6, 1000
 	bltz	r2, print_int.neg
 print_int.pos:
-	blt	r2, r5, print_int.pos.1000
-print_int.pos.large:
-	mul	r5, r5
-	mflo	r8 # 1000000
-	bge	r2, r8, print_int.pos.large.large
-	div	r2, r5
-	mfhi	r2
-	mflo	r9
 	move	r10, r31
-	jal	print_int.pos.1000
-	move	r2, r9
-	move	r31, r10
+	blt	r2, r6, print_int.pos.1000
+print_int.pos.large:
+	mul	r6, r6
+	mflo	r9 # 1000000
+	bge	r2, r9, print_int.pos.large.large
+	move	r3, r6
+	jal	print_int.div
+	move	r7, r2
+	move	r9, r10
+	move	r2, r3
+	jal	print_int.pos.1000.2
+	move	r2, r7
+	move	r10, r9
 	j	print_int.pos.1000.1
 print_int.pos.large.large:
-	div	r2, r8
-	mfhi	r2
-	mflo	r9
-	move	r10, r31
-	jal	print_int.pos.10000
-	move	r2, r9
-	move	r31, r10
+	move	r3, r9
+	jal	print_int.div
+	move	r7, r2
+	move	r9, r10
+	move	r2, r3
+	jal	print_int.pos.10000.2
+	move	r2, r7
+	move	r10, r9
 	j	print_int.pos.1000000.1
 print_int.neg:
-	li	r8, 45
-	ob	r8
+	li	r3, 45
+	ob	r3
 	neg	r2, r2
 	j	print_int.pos
 print_int.pos.10000:
-	div	r2, r5
-	mfhi	r8
-	blez	r8, print_int.pos.1000
-	addi	r8, r8, 48
-	ob	r8
-	mflo	r2
+	move	r3, r6
+	jal	print_int.div
+	blez	r3, print_int.pos.1000
+	addi	r3, r3, 48
+	ob	r3
 	j	print_int.pos.1000.1
 print_int.pos.1000:
-	div	r2, r4
-	mfhi	r8
-	blez	r8, print_int.pos.100
-	addi	r8, r8, 48
-	ob	r8
-	mflo	r2
+	move	r3, r5
+	jal	print_int.div
+	blez	r3, print_int.pos.100
+	addi	r3, r3, 48
+	ob	r3
 	j	print_int.pos.100.1
 print_int.pos.100:
-	div	r2, r3
-	mfhi	r8
-	blez	r8, print_int.pos.10
-	addi	r8, r8, 48
-	ob	r8
-	mflo	r2
+	move	r3, r4
+	jal	print_int.div
+	blez	r3, print_int.pos.10
+	addi	r3, r3, 48
+	ob	r3
 print_int.pos.10:
 	addi	r2, r2, 48
 	ob	r2
-	jr	r31
+	jr	r10
 print_int.pos.1000000.1:
-	li	r6, 10000
-	mul	r6, r3
-	mflo	r7 # 100000
-	div	r2, r7
-	mfhi	r8
-	addi	r8, r8, 48
-	ob	r8
-	mflo	r2
+	li	r7, 10000
+	mul	r7, r4
+	mflo	r8 # 100000
+	move	r3, r8
+	jal	print_int.div
+	addi	r3, r3, 48
+	ob	r3
 print_int.pos.100000.1:
-	div	r2, r6
-	mfhi	r8
-	addi	r8, r8, 48
-	ob	r8
-	mflo	r2
+	move	r3, r7
+	jal	print_int.div
+	addi	r3, r3, 48
+	ob	r3
 print_int.pos.10000.1:
-	div	r2, r5
-	mfhi	r8
-	addi	r8, r8, 48
-	ob	r8
-	mflo	r2
+	move	r3, r6
+	jal	print_int.div
+	addi	r3, r3, 48
+	ob	r3
 print_int.pos.1000.1:
-	div	r2, r4
-	mfhi	r8
-	addi	r8, r8, 48
-	ob	r8
-	mflo	r2
+	move	r3, r5
+	jal	print_int.div
+	addi	r3, r3, 48
+	ob	r3
 print_int.pos.100.1:
-	div	r2, r3
-	mfhi	r8
-	addi	r8, r8, 48
-	ob	r8
-	mflo	r2
+	move	r3, r4
+	jal	print_int.div
+	addi	r3, r3, 48
+	ob	r3
 	addi	r2, r2, 48
 	ob	r2
+	jr	r10
+print_int.pos.1000.2:
+	move	r10, r31
+	j	print_int.pos.1000
+print_int.pos.10000.2:
+	move	r10, r31
+	j	print_int.pos.10000
+print_int.div:
+	move	r8, r3
+	move	r3, r0
+	sub	r2, r2, r8
+	bgez	r2, print_int.div.loop
+	add	r2, r2, r8
+	jr	r31
+print_int.div.loop:
+	sub	r2, r2, r8
+	addi	r3, r3, 1
+	bgez	r2, print_int.div.loop
+	add	r2, r2, r8
 	jr	r31
 min_caml_print_newline:
 	li	r2, 10
